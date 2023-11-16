@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "types": [
+            "node"
+        ],
+        "module": "NodeNext",
+        "strict": true,
+        "outDir": "dist/esm",
+        "sourceMap": true,
+        "declaration": true,
+        "resolveJsonModule": true,
+        "esModuleInterop": true
+    },
+    "include": [
+        "src/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "**/*.spec.ts"
+    ]
+}

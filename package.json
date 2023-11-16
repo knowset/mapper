@@ -1,0 +1,44 @@
+{
+    "name": "@knowset/mapper",
+    "version": "0.0.2",
+    "main": "dist/cjs/index.js",
+    "module": "dist/esm/index.js",
+    "types": "dist/esm/index.d.ts",
+    "scripts": {
+        "build": "npm run build:esm && npm run build:cjs && npm run build:cpp",
+        "jsbuild": "npm run build:esm && npm run build:cjs",
+        "build:esm": "tsc -p tsconfig.json",
+        "build:cjs": "tsc -p tsconfig.cjs.json",
+        "build:cpp": "cmake-js compile --out=dist/cjs/build",
+        "dev": "node dist/cjs/index.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/knowset/mapper.git"
+    },
+    "engines": {
+        "node": ">= 14.0.0"
+    },
+    "files": [
+        "types.ts",
+        "index.cpp",
+        "binding.gyp",
+        "./map_files/highway-line.json"
+    ],
+    "dependencies": {
+        "@turf/explode": "^6.5.0",
+        "@turf/helpers": "^6.5.0",
+        "@turf/turf": "^6.5.0",
+        "bindings": "^1.5.0",
+        "cmake-js": "^7.2.1",
+        "mocha": "^10.2.0",
+        "node-addon-api": "^7.0.0"
+    },
+    "devDependencies": {
+        "@types/node": "^20.8.9",
+        "typescript": "^5.2.2"
+    },
+    "author": "knowset",
+    "license": "ISC",
+    "description": ""
+}
