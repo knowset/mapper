@@ -3,7 +3,6 @@ import { FeatureCollection, LineString } from "./geoJsonTypes";
 const { Mapper } = require("./build/Release/Mapper");
 import geojson from "./highway-line.json";
 
-console.log(geojson);
 const mapper = new Mapper(geojson);
 
 // test

@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_definitions(-DNAPI_VERSION=6)
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+set(V8_DEPRECATION_WARNINGS 1)
 
 include_directories(${CMAKE_JS_INC})
 

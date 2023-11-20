@@ -24,31 +24,6 @@ enum GeoJsonObjectsTypes {
     UNDEFINED
 };
 
-class Position {
-
-private:
-    double m_lat;
-    double m_lng;
-
-public:
-    Position(double lat, double lng)
-        : m_lat(lat)
-        , m_lng(lng)
-    {
-    }
-    Position& operator=(Position&& pos)
-    {
-        m_lat = std::move(pos.m_lat);
-        m_lng = std::move(pos.m_lng);
-
-        return *this;
-    }
-    Position(Position&) = delete;
-
-    double& lat(void) { return m_lat; }
-    double& lng(void) { return m_lng; }
-};
-
 struct GeoJsonObject {
     std::string type;
 };
