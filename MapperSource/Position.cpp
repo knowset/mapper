@@ -2,6 +2,16 @@
 
 #include "Position.hpp"
 
+std::pair<double, double> Position::round_coordinate(Position& position)
+{
+    return std::make_pair(std::round(position.lat() / 1e-5) * 1e-5, std::round(position.lng() / 1e-5) * 1e-5);
+}
+
+std::pair<double, double> Position::round_coordinate(double lat, double lng)
+{
+    return std::make_pair(std::round(lat / 1e-5) * 1e-5, std::round(lng / 1e-5) * 1e-5);
+}
+
 double Position::radians_to_length(double radians)
 {
     return radians * EARTHRADIUS;

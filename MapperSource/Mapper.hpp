@@ -24,6 +24,5 @@ public:
 
     std::vector<std::future<void>> m_futures;
 
-    // FeatureCollection m_fc;
     Graph m_graph;
 };

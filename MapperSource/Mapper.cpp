@@ -7,6 +7,7 @@
 #include <cassert>
 #include <future>
 #include <iostream>
+#include <limits>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -35,6 +36,30 @@ Mapper::Mapper(Napi::CallbackInfo const& info)
     parse_geojson_napi_object(info[0].As<Napi::Object>(), info.Env());
 }
 
+struct Ways {
+    NodeWrapper* highway = nullptr;
+    // Node* footway = nullptr;
+};
+
+// "HIGHWAY":"bridleway"
+// "HIGHWAY":"construction"
+// "HIGHWAY":"cycleway"
+// "HIGHWAY":"footway"
+// "HIGHWAY":"path"
+// "HIGHWAY":"pedestrian"
+// "HIGHWAY":"primary"
+// "HIGHWAY":"proposed"
+// "HIGHWAY":"raceway"
+// "HIGHWAY":"residential"
+// "HIGHWAY":"road"
+// "HIGHWAY":"secondary"
+// "HIGHWAY":"service"
+// "HIGHWAY":"steps"
+// "HIGHWAY":"tertiary"
+// "HIGHWAY":"track"
+// "HIGHWAY":"trunk"
+// "HIGHWAY":"unclassified"
+
 Napi::Value Mapper::FindRoutes(Napi::CallbackInfo const& info)
 {
     // 1
@@ -47,29 +72,140 @@ Napi::Value Mapper::FindRoutes(Napi::CallbackInfo const& info)
     }
 
     // FIXME: There can be more than 2 paths, do it through a 'for' loop
-    auto start = m_graph.nodes()[Node::round_coordinate(positions[0]->position())];
-    auto end = m_graph.nodes()[Node::round_coordinate(positions[1]->position())];
+    // auto start = m_graph.nodes()[positions[0]->position()];
+    // auto end = m_graph.nodes()[positions[1]->position()];
 
-    std::cout << Position::distance(positions[0]->position(), positions[1]->position()) << " #pos\n";
+    auto find_nearest_point = [&](Node* point) {
+        Ways w_point;
+        double min_dist_highway_point = std::numeric_limits<double>::max();
+        double min_dist_footway_point = std::numeric_limits<double>::max();
 
-    std::cout << start->children().size() << "##########\n";
+        for (auto const& graph_node : m_graph.nodes()) {
+            auto type = graph_node.second->options()["HIGHWAY"];
+            if (type == "footway" || type == "steps") {
+                // double dist = Position::distance(point->position(), graph_node.second->position());
+                // if (dist < min_dist_footway_point) {
+                //     w_point.footway = graph_node.second;
+                //     min_dist_footway_point = dist;
+                // }
+            } else if (type != "footway") {
+                double dist = Position::distance(point->position(), graph_node.second->position());
+                if (dist < min_dist_highway_point) {
+                    w_point.highway = new NodeWrapper(graph_node.second);
+                    min_dist_highway_point = dist;
+                }
+            }
+        }
+        return w_point;
+    };
 
-    // FIXME: The point can be very far from the graph node.
-    //        If the point is not found on the graph, then
-    //        iterate the graph to find the nearest point
-    if (start) {
-        std::cout << "Start point found in graph\n";
+    Ways w_start = find_nearest_point(positions[0]);
+    Ways w_end = find_nearest_point(positions[1]);
+
+    std::cout << "START: " << w_start.highway->node().position().lat() << " - " << w_start.highway->node().position().lng() << "\n";
+    std::cout << "END: " << w_end.highway->node().position().lat() << " - " << w_end.highway->node().position().lng() << "\n";
+
+    // if (w_start.footway != nullptr)
+    //     std::cout << w_start.footway->position().lat() << " - " << w_start.footway->position().lng() << " <<<<\n";
+    // std::cout << Position::distance(positions[0]->position(), positions[1]->position()) << " #pos\n";
+    //
+
+    if (!w_start.highway) {
+        // std::cout << "Start point found in graph\n";
+        throw Napi::Error::New(info.Env(), "start_point not found!");
     }
 
-    if (end) {
-        std::cout << "End point found in graph\n";
+    // GLOBALFIXME:
+    //      Определение начальной и конечной точки
+    //      1) ищем в Mapper::m_graph точку start
+    //      2) если она есть, смотрим ее тип автодорога или тратуар
+    //      3) перебором ищем ближайший к этой точке оставшийся тип (автодорога или тратуар)
+    //      4) все тоже самое проделываем с точкой end
+    //
+    //     Нахождение пути
+    //     1) используя алгоритм A* дважды ищем путь для двух типов дорог (автодорога или тратуар)
+    //     2) возвращаем объект:
+    //          ways: {
+    //              highway: [number, number][],
+    //              footway: [number, number][]
+    //          }
+
+    if (!w_end.highway) {
+        throw Napi::Error::New(info.Env(), "end_point not found!");
     }
 
-    std::vector<Node*> reachable = { start };
+    std::vector<NodeWrapper*> reachable = { new NodeWrapper(&w_start.highway->node()) };
+    //
+    // // FIXME: can be rewritten to the Graph class
+    std::map<Position, NodeWrapper*> explored;
+    std::vector<NodeWrapper*> path;
 
-    auto test_node = Node::choose_nearest_node(start->children(), end);
-    
-    std::cout << test_node->position().lat() << " - " << test_node->position().lng() << " # test_node\n";
+    NodeWrapper* temp = nullptr;
+
+    auto const& get_adjasted_nodes = [&](NodeWrapper* node_wrapper) {
+        std::vector<NodeWrapper*> new_reachable;
+        // adjacent nodes
+        for (auto a_node : node_wrapper->node().children()) {
+            if (!explored[a_node->position()]) {
+                // FIXME: добавить previous в node_copy | это нужно для построения пути
+                NodeWrapper* node_copy = new NodeWrapper(a_node);
+
+                explored[a_node->position()]
+                    = new NodeWrapper(&node_wrapper->node());
+
+                new_reachable.push_back(node_copy);
+            }
+        }
+        return new_reachable;
+    };
+
+    auto find_in_reachable = [&](NodeWrapper* node) {
+        return std::find(reachable.begin(), reachable.end(), node);
+    };
+
+    auto remove_from_reachable = [&](NodeWrapper* node) {
+        auto it = find_in_reachable(node);
+        if (it != reachable.end()) {
+            reachable.erase(it);
+        }
+    };
+
+    auto build_path = [&](NodeWrapper* to_node) {
+        std::vector<NodeWrapper*> _path;
+        while (to_node) {
+            _path.push_back(to_node);
+            to_node = &to_node->previous_node();
+        }
+        return _path;
+    };
+
+    while (!reachable.empty()) {
+        temp = Node::choose_nearest_node(reachable, w_end.highway);
+
+        if (temp->node() == w_end.highway->node()) {
+            std::cout << "end_point found!!!\n";
+            path = build_path(temp);
+            break;
+        }
+
+        remove_from_reachable(temp);
+        NodeWrapper* temp_copy = new NodeWrapper(&temp->node());
+        explored[temp_copy->node().position()] = temp_copy;
+
+        auto const& new_reachable = get_adjasted_nodes(temp);
+
+        for (auto nr : new_reachable) {
+            auto it = find_in_reachable(nr);
+            if (it == reachable.end()) {
+                nr->set_previous_node(temp);
+                reachable.push_back(nr);
+            }
+        }
+    }
+
+    for (auto p : path) {
+        std::cout << "NODE: " << p->node().position().lat() << " - " << p->node().position().lng() << "\n";
+    }
 
     return info.Env().Undefined();
 }
@@ -161,14 +297,18 @@ void Mapper::parse_geojson_napi_object(Napi::Object const& network, Napi::Env co
         // default:
         //     break;
         // }
-        auto type_as_std_string = feature_geometry_type.ToString().Utf8Value();
-        if (type_as_std_string == "LineString") {
-            auto ls = extract_linestring(feature_geometry_coordinates_as_napi_value, properties, env);
-            m_graph.append_nodes(ls);
-        } else if (type_as_std_string == "MultiLineString") {
-            continue;
-        } else {
-            continue;
+        auto type = properties->operator[]("HIGHWAY");
+        if (type != "footway" && type != "step") {
+
+            auto type_as_std_string = feature_geometry_type.ToString().Utf8Value();
+            if (type_as_std_string == "LineString") {
+                auto ls = extract_linestring(feature_geometry_coordinates_as_napi_value, properties, env);
+                m_graph.append_nodes(ls);
+            } else if (type_as_std_string == "MultiLineString") {
+                continue;
+            } else {
+                continue;
+            }
         }
     }
 

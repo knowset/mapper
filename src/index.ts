@@ -6,4 +6,9 @@ import geojson from "./highway-line.json";
 const mapper = new Mapper(geojson);
 
 // test
-mapper.findRoutes([[38.4447323, 59.8532187], [38.006403, 59.130858]]);
+
+try {
+  mapper.findRoutes([[36.4644238,61.0245816], [36.4626106,61.0175432]]);
+} catch (e) {
+  console.error("Error message: ", e);
+}

@@ -19,7 +19,7 @@ void Graph::append_nodes(std::vector<Node*>& positions)
     Node* next_node = nullptr;
 
     for (size_t i = 0; i < positions.size(); i++) {
-        if (auto& position = m_nodes[Node::round_coordinate(positions[i]->position())]) {
+        if (auto& position = m_nodes[positions[i]->position()]) {
             // FIXME: проверить массив children
             if (i == 0) {
                 last_node = position;
@@ -51,3 +51,4 @@ void Graph::append_nodes(std::vector<Node*>& positions)
         }
     }
 }
+
