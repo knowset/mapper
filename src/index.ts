@@ -1,14 +1,17 @@
-import { FeatureCollection, LineString } from "./geoJsonTypes";
-
-const { Mapper } = require("./build/Release/Mapper");
-import geojson from "./highway-line.json";
-
-const mapper = new Mapper(geojson);
+const { Mapper: NMapper } = require("./build/Release/Mapper");
 
 // test
+class Mapper {
+  mapper: any;
 
-try {
-  mapper.findRoutes([[36.4644238,61.0245816], [36.4626106,61.0175432]]);
-} catch (e) {
-  console.error("Error message: ", e);
+  constructor(gj?: object) {
+    this.mapper = new NMapper(gj);
+    console.log(this.mapper);
+  }
+
+  findRoutes(coordinates: [number, number][]): [number, number][] {
+    return this.mapper.findRoutes(coordinates);
+  }
 }
+
+export default Mapper;

@@ -202,12 +202,17 @@ Napi::Value Mapper::FindRoutes(Napi::CallbackInfo const& info)
             }
         }
     }
-
-    for (auto p : path) {
-        std::cout << "NODE: " << p->node().position().lat() << " - " << p->node().position().lng() << "\n";
+    
+    Napi::Array return_array = Napi::Array::New(info.Env(), path.size());
+    for (size_t i = 0; i < path.size(); i++) {
+        std::cout << "NODE: " << path[i]->node().position().lat() << " - " << path[i]->node().position().lng() << "\n";
+        Napi::Array pos = Napi::Array::New(info.Env(), 2);
+        pos.Set("0", path[i]->node().position().lat());
+        pos.Set("1", path[i]->node().position().lng());
+        return_array.Set(i, pos);
     }
 
-    return info.Env().Undefined();
+    return return_array;
 }
 
 Napi::Value Mapper::CreateNewItem(Napi::CallbackInfo const& info)
