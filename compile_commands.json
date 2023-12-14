@@ -1,1 +1,26 @@
-dist/cjs/build/compile_commands.json
+[
+{
+  "directory": "/home/knowset/programming/ts/gisi/src/lib/mapper",
+  "command": "/usr/bin/c++ -DMapper_EXPORTS -DNAPI_VERSION=6 -I/home/knowset/.cmake-js/node-x64/v20.8.0/include/node -I/home/knowset/programming/ts/gisi/src/lib/mapper/node_modules/node-addon-api -DBUILDING_NODE_EXTENSION -O3 -DNDEBUG -std=gnu++17 -fPIC -o CMakeFiles/Mapper.dir/MapperSource/Graph.cpp.o -c /home/knowset/programming/ts/gisi/src/lib/mapper/MapperSource/Graph.cpp",
+  "file": "/home/knowset/programming/ts/gisi/src/lib/mapper/MapperSource/Graph.cpp",
+  "output": "CMakeFiles/Mapper.dir/MapperSource/Graph.cpp.o"
+},
+{
+  "directory": "/home/knowset/programming/ts/gisi/src/lib/mapper",
+  "command": "/usr/bin/c++ -DMapper_EXPORTS -DNAPI_VERSION=6 -I/home/knowset/.cmake-js/node-x64/v20.8.0/include/node -I/home/knowset/programming/ts/gisi/src/lib/mapper/node_modules/node-addon-api -DBUILDING_NODE_EXTENSION -O3 -DNDEBUG -std=gnu++17 -fPIC -o CMakeFiles/Mapper.dir/MapperSource/Mapper.cpp.o -c /home/knowset/programming/ts/gisi/src/lib/mapper/MapperSource/Mapper.cpp",
+  "file": "/home/knowset/programming/ts/gisi/src/lib/mapper/MapperSource/Mapper.cpp",
+  "output": "CMakeFiles/Mapper.dir/MapperSource/Mapper.cpp.o"
+},
+{
+  "directory": "/home/knowset/programming/ts/gisi/src/lib/mapper",
+  "command": "/usr/bin/c++ -DMapper_EXPORTS -DNAPI_VERSION=6 -I/home/knowset/.cmake-js/node-x64/v20.8.0/include/node -I/home/knowset/programming/ts/gisi/src/lib/mapper/node_modules/node-addon-api -DBUILDING_NODE_EXTENSION -O3 -DNDEBUG -std=gnu++17 -fPIC -o CMakeFiles/Mapper.dir/MapperSource/Position.cpp.o -c /home/knowset/programming/ts/gisi/src/lib/mapper/MapperSource/Position.cpp",
+  "file": "/home/knowset/programming/ts/gisi/src/lib/mapper/MapperSource/Position.cpp",
+  "output": "CMakeFiles/Mapper.dir/MapperSource/Position.cpp.o"
+},
+{
+  "directory": "/home/knowset/programming/ts/gisi/src/lib/mapper",
+  "command": "/usr/bin/c++ -DMapper_EXPORTS -DNAPI_VERSION=6 -I/home/knowset/.cmake-js/node-x64/v20.8.0/include/node -I/home/knowset/programming/ts/gisi/src/lib/mapper/node_modules/node-addon-api -DBUILDING_NODE_EXTENSION -O3 -DNDEBUG -std=gnu++17 -fPIC -o CMakeFiles/Mapper.dir/MapperSource/main.cpp.o -c /home/knowset/programming/ts/gisi/src/lib/mapper/MapperSource/main.cpp",
+  "file": "/home/knowset/programming/ts/gisi/src/lib/mapper/MapperSource/main.cpp",
+  "output": "CMakeFiles/Mapper.dir/MapperSource/main.cpp.o"
+}
+]

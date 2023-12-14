@@ -45,7 +45,7 @@ public:
     }
     bool operator<(Position const& rhs) const
     {
-        return m_lat < rhs.m_lat && m_lng < rhs.m_lng;
+        return m_lat < rhs.m_lat || (m_lat == rhs.m_lat && m_lng < rhs.m_lng);
     }
 
     double& lat(void) { return m_lat; }

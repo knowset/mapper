@@ -9,7 +9,6 @@
 
 void Graph::append_nodes(std::vector<Node*>& positions)
 {
-
     // FIXME: round_coordinate(position) -> std::pair<double, double>
     // round_coordinate(position);
     if (positions.size() == 0)
@@ -17,7 +16,7 @@ void Graph::append_nodes(std::vector<Node*>& positions)
 
     Node* last_node = nullptr;
     Node* next_node = nullptr;
-
+    // FIXME: ПЕРЕПИСАТЬ, РАБОТАЕТ НЕ ПРАВИЛЬНО
     for (size_t i = 0; i < positions.size(); i++) {
         if (auto& position = m_nodes[positions[i]->position()]) {
             // FIXME: проверить массив children
@@ -51,4 +50,3 @@ void Graph::append_nodes(std::vector<Node*>& positions)
         }
     }
 }
-

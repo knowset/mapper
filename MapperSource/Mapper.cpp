@@ -5,17 +5,14 @@
 #include "napi.h"
 
 #include <cassert>
-#include <future>
 #include <iostream>
 #include <limits>
-#include <mutex>
-#include <thread>
 #include <vector>
 
 Napi::Object Mapper::Init(Napi::Env env, Napi::Object exports)
 {
     Napi::Function func = DefineClass(
-        env, "Mapper", { InstanceMethod("findRoutes", &Mapper::FindRoutes) });
+        env, "Mapper", { InstanceMethod("findRoutes", &Mapper::FindRoutes), InstanceMethod("addGeoJson", &Mapper::AddGeoJson) });
 
     Napi::FunctionReference* constructor = new Napi::FunctionReference();
     *constructor = Napi::Persistent(func);
@@ -31,9 +28,22 @@ Mapper::Mapper(Napi::CallbackInfo const& info)
     Napi::Env env = info.Env();
 
     // 1. assert and parse geojson object
-    assert(info.Length() == 1 && info[0].IsObject());
+    assert(info.Length() == 1);
 
-    parse_geojson_napi_object(info[0].As<Napi::Object>(), info.Env());
+    if (info[0].IsObject())
+        parse_geojson_napi_object(info[0].As<Napi::Object>(), info.Env());
+}
+
+void Mapper::AddGeoJson(Napi::CallbackInfo const& info)
+{
+    assert(info.Length() == 1);
+
+    std::cout << "In AddGeoJson\n";
+    if (info[0].IsObject()) {
+        std::cout << "Yep it's object\n";
+        parse_geojson_napi_object(info[0].As<Napi::Object>(), info.Env());
+    }
+    std::cout << "Graph size: " << m_graph.nodes().size() << "\n";
 }
 
 struct Ways {
@@ -65,11 +75,17 @@ Napi::Value Mapper::FindRoutes(Napi::CallbackInfo const& info)
     // 1
     assert(info.Length() > 1 && info[0].IsArray());
 
+    if (m_graph.nodes().size() < 2) {
+        throw Napi::Error::New(info.Env(), "Something went wrong!!!");
+    }
+
     auto positions = extract_linestring(info[0], {}, info.Env());
 
     if (positions.size() < 2) {
         return Napi::Array::New(info.Env(), 0);
     }
+
+    std::cout << "Graph size: " << m_graph.nodes().size() << "\n";
 
     // FIXME: There can be more than 2 paths, do it through a 'for' loop
     // auto start = m_graph.nodes()[positions[0]->position()];
@@ -79,6 +95,9 @@ Napi::Value Mapper::FindRoutes(Napi::CallbackInfo const& info)
         Ways w_point;
         double min_dist_highway_point = std::numeric_limits<double>::max();
         double min_dist_footway_point = std::numeric_limits<double>::max();
+        Node* nearest_highway_point = nullptr;
+
+        // std::cout << point->position().lat() << "-" << point->position().lng() << "\n";
 
         for (auto const& graph_node : m_graph.nodes()) {
             auto type = graph_node.second->options()["HIGHWAY"];
@@ -91,28 +110,34 @@ Napi::Value Mapper::FindRoutes(Napi::CallbackInfo const& info)
             } else if (type != "footway") {
                 double dist = Position::distance(point->position(), graph_node.second->position());
                 if (dist < min_dist_highway_point) {
-                    w_point.highway = new NodeWrapper(graph_node.second);
+                    std::cout << "DIST: " << dist << '\n';
+                    std::cout << graph_node.second->position().lat() << "-" << graph_node.second->position().lng() << "\n";
+                    nearest_highway_point = graph_node.second;
                     min_dist_highway_point = dist;
                 }
             }
         }
+        w_point.highway = new NodeWrapper(nearest_highway_point);
         return w_point;
     };
 
+    std::cout << positions[0]->position().lat() << " - " << positions[0]->position().lng() << "\n";
+    std::cout << positions[1]->position().lat() << " - " << positions[1]->position().lng() << "\n";
+
     Ways w_start = find_nearest_point(positions[0]);
     Ways w_end = find_nearest_point(positions[1]);
-
-    std::cout << "START: " << w_start.highway->node().position().lat() << " - " << w_start.highway->node().position().lng() << "\n";
-    std::cout << "END: " << w_end.highway->node().position().lat() << " - " << w_end.highway->node().position().lng() << "\n";
 
     // if (w_start.footway != nullptr)
     //     std::cout << w_start.footway->position().lat() << " - " << w_start.footway->position().lng() << " <<<<\n";
     // std::cout << Position::distance(positions[0]->position(), positions[1]->position()) << " #pos\n";
     //
 
-    if (!w_start.highway) {
-        // std::cout << "Start point found in graph\n";
+    if (w_start.highway == nullptr) {
         throw Napi::Error::New(info.Env(), "start_point not found!");
+    }
+
+    if (!w_end.highway) {
+        throw Napi::Error::New(info.Env(), "end_point not found!");
     }
 
     // GLOBALFIXME:
@@ -130,15 +155,18 @@ Napi::Value Mapper::FindRoutes(Napi::CallbackInfo const& info)
     //              footway: [number, number][]
     //          }
 
-    if (!w_end.highway) {
-        throw Napi::Error::New(info.Env(), "end_point not found!");
-    }
+    std::cout << "START: " << w_start.highway->node().position().lat() << " - " << w_start.highway->node().position().lng() << "\n";
+    std::cout << "END: " << w_end.highway->node().position().lat() << " - " << w_end.highway->node().position().lng() << "\n";
+
+    std::cout << w_start.highway->node().children().size() << "<<CHSZ\n";
 
     std::vector<NodeWrapper*> reachable = { new NodeWrapper(&w_start.highway->node()) };
     //
     // // FIXME: can be rewritten to the Graph class
     std::map<Position, NodeWrapper*> explored;
     std::vector<NodeWrapper*> path;
+
+    std::cout << "REACH: " << reachable.size() << '\n';
 
     NodeWrapper* temp = nullptr;
 
@@ -181,7 +209,7 @@ Napi::Value Mapper::FindRoutes(Napi::CallbackInfo const& info)
 
     while (!reachable.empty()) {
         temp = Node::choose_nearest_node(reachable, w_end.highway);
-
+        std::cout << "IN WHILE LOOP\n";
         if (temp->node() == w_end.highway->node()) {
             std::cout << "end_point found!!!\n";
             path = build_path(temp);
@@ -189,11 +217,12 @@ Napi::Value Mapper::FindRoutes(Napi::CallbackInfo const& info)
         }
 
         remove_from_reachable(temp);
+        std::cout << "R size: " << reachable.size() << '\n';
         NodeWrapper* temp_copy = new NodeWrapper(&temp->node());
         explored[temp_copy->node().position()] = temp_copy;
 
         auto const& new_reachable = get_adjasted_nodes(temp);
-
+        std::cout << "NR size: " << new_reachable.size() << "\n";
         for (auto nr : new_reachable) {
             auto it = find_in_reachable(nr);
             if (it == reachable.end()) {
@@ -202,7 +231,13 @@ Napi::Value Mapper::FindRoutes(Napi::CallbackInfo const& info)
             }
         }
     }
-    
+
+    if (path.size() == 0) {
+        path = build_path(temp);
+    }
+
+    std::cout << "Graph size: " << m_graph.nodes().size() << "\n";
+
     Napi::Array return_array = Napi::Array::New(info.Env(), path.size());
     for (size_t i = 0; i < path.size(); i++) {
         std::cout << "NODE: " << path[i]->node().position().lat() << " - " << path[i]->node().position().lng() << "\n";
@@ -211,6 +246,8 @@ Napi::Value Mapper::FindRoutes(Napi::CallbackInfo const& info)
         pos.Set("1", path[i]->node().position().lng());
         return_array.Set(i, pos);
     }
+
+    std::cout << "Alg end!!!\n";
 
     return return_array;
 }

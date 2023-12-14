@@ -63,7 +63,7 @@ public:
     {
         double min_distance = std::numeric_limits<double>::max();
         NodeWrapper* nearest_node;
-
+        std::cout << "HERE\n";
         // https://habr.com/ru/articles/444828/
         for (NodeWrapper* node_wrapper : reachable) {
             // cost_start_to_node = node.cost
@@ -130,20 +130,3 @@ private:
     std::vector<Node*> m_children;
     std::map<std::string, std::string>* m_properties;
 };
-
-// FIXME: come up with a more appropriate name for this class
-// {
-//             "type": "Feature",
-//             "geometry": {
-//                 "type": "LineString",
-//                 "coordinates": [
-//                     [36.603329, 61.3755799],
-//                     ...
-//                  ]
-//             },
-//             "properties": {
-//                 "OSM_TYPE": "way",
-//                  ...
-//             }
-//         },
-//
